@@ -18,8 +18,8 @@ The page includes:
 
 - Metric comparison under the AgentDoG 1.5 coarse prompt / unsafe-positive evaluation standard.
 - SearchSwarm-style project page layout with a centered CEFT method title.
-- CEFT framework diagram loaded from `assets/ceft-framework.jpg`.
-- 3D diagnosis distribution loaded from `assets/diagnosis-distribution.jpg`.
+- CEFT framework diagram loaded from `assets/ceft-framework.webp`.
+- 3D diagnosis distribution loaded from `assets/diagnosis-distribution.webp`.
 - Trajectory cards with tool list, user messages, agent tool calls, environment returns, and final response.
 - Summary-first demo interaction: the main page groups 8 cases into R-Judge and 2026 summer test sections, and clicking a card opens the detailed trajectory and model analysis.
 - Cases from the 2026 summer test set and R-Judge, including a benign store-update case for over-refusal analysis.
