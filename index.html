@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>CEFT: Agent Trajectory Safety Demo</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="#top" aria-label="CEFT home">
+        <span class="brand-mark">CEFT</span>
+      </a>
+      <nav class="nav-links" aria-label="Main navigation">
+        <a href="#framework">Framework</a>
+        <a href="#results">Results</a>
+        <a href="#diagnosis">Diagnosis</a>
+        <a href="#demo">Demo</a>
+        <a href="#artifacts">Artifacts</a>
+      </nav>
+    </header>
+
+    <main id="top">
+      <section class="hero">
+        <p class="eyebrow">AgentDoG-Lite Safety Diagnosis</p>
+        <div class="hero-brand-lockup">
+          <img src="./assets/ceft-logo.jpg" alt="CEFT logo" />
+          <h1>CEFT</h1>
+        </div>
+        <h2 class="hero-subtitle">Counterfactual Evidence Fine-Tuning for Agent Trajectory Safety</h2>
+        <p class="lead">
+          We teach Qwen3.5-0.8B to judge the complete agent execution trace:
+          find the decisive behavior evidence, diagnose risk source, failure mode,
+          and harm, then produce a compact safe/unsafe judgment.
+        </p>
+        <div class="hero-actions">
+          <a href="#demo">Trajectories in Action</a>
+          <a href="#results">Benchmark Results</a>
+          <a href="#framework">Framework</a>
+        </div>
+        <div class="hero-cards">
+          <article>
+            <h3>Evidence first</h3>
+            <p>Unsafe must be grounded in concrete agent behavior, not just risky text.</p>
+          </article>
+          <article>
+            <h3>Counterfactual pairs</h3>
+            <p>Near-identical safe/unsafe traces teach the model where the boundary is.</p>
+          </article>
+          <article>
+            <h3>Short-CoT output</h3>
+            <p>Evidence, 3D risk diagnosis, final judgment, low invalid rate.</p>
+          </article>
+        </div>
+      </section>
+
+      <section id="framework" class="section">
+        <div class="section-heading">
+          <p class="eyebrow">Framework</p>
+          <h2>Main Framework: CEFT</h2>
+          <p>
+            From baseline error analysis to evidence-centered data construction,
+            counterfactual boundary learning, and lightweight student fine-tuning.
+          </p>
+        </div>
+
+        <figure class="framework-image-card">
+          <img src="./assets/ceft-framework.jpg" alt="CEFT framework diagram" />
+          <figcaption>
+            CEFT pipeline: trajectory-level error analysis, teacher evidence diagnosis,
+            counterfactual safe/unsafe pairing, short-CoT SFT, and compact judgment.
+          </figcaption>
+        </figure>
+
+        <div class="method-grid framework-steps">
+          <article>
+            <span>1</span>
+            <h3>Error mining</h3>
+            <p>Collect false negatives, over-refusals, and invalid outputs from the AgentDoG coarse prompt baseline.</p>
+          </article>
+          <article>
+            <span>2</span>
+            <h3>Evidence labeling</h3>
+            <p>Require a teacher to point to concrete behavior evidence before assigning unsafe.</p>
+          </article>
+          <article>
+            <span>3</span>
+            <h3>Counterfactual data</h3>
+            <p>Construct pairs that differ only in whether the agent executes or refuses the harmful step.</p>
+          </article>
+          <article>
+            <span>4</span>
+            <h3>Short-CoT SFT</h3>
+            <p>Train Qwen3.5-0.8B to emit compact evidence, 3D risk diagnosis, and judgment.</p>
+          </article>
+        </div>
+      </section>
+
+      <section id="results" class="section">
+        <div class="section-heading">
+          <p class="eyebrow">Results</p>
+          <h2>Benchmark Comparisons</h2>
+          <p>
+            The official binary metrics treat unsafe as the positive class.
+            Invalid outputs are counted as wrong and output tokens are tracked.
+          </p>
+        </div>
+        <div class="result-table-wrap">
+          <table class="result-table">
+            <thead>
+              <tr>
+                <th>Dataset</th>
+                <th>Method</th>
+                <th>Acc</th>
+                <th>Precision</th>
+                <th>Recall</th>
+                <th>F1</th>
+                <th>Invalid</th>
+                <th>Avg tokens</th>
+              </tr>
+            </thead>
+            <tbody id="resultRows"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="demo" class="section demo-section">
+        <div class="section-heading">
+          <p class="eyebrow">Demo</p>
+          <h2>Trajectories in Action</h2>
+          <p>
+            Real benchmark cases: first scan the task summaries, then click into
+            a case to inspect the original trajectory and actual CEFT analysis output.
+          </p>
+        </div>
+
+        <div class="case-picker" id="casePicker" aria-label="Choose a trajectory case"></div>
+
+        <dialog class="case-dialog" id="caseDialog" aria-label="Trajectory detail">
+          <article class="demo-card">
+          <button class="close-dialog" id="closeDialog" type="button" aria-label="Close trajectory detail">Close</button>
+          <div class="demo-title">
+            <div>
+              <p class="eyebrow" id="caseDataset"></p>
+              <h3 id="caseTitle"></h3>
+              <p id="caseSummary"></p>
+            </div>
+            <span class="trace-id" id="caseId"></span>
+          </div>
+
+          <div class="tool-strip" id="toolStrip"></div>
+
+          <section class="trajectory-stage">
+            <div class="panel-title">
+              <span>Input</span>
+              <h4>Agent execution trajectory</h4>
+            </div>
+            <div class="trace-flow" id="timeline"></div>
+          </section>
+
+          <section class="analysis-stage">
+            <div class="panel-title">
+              <span>Output</span>
+              <h4>CEFT model analysis</h4>
+            </div>
+
+            <div class="judgment-row">
+              <div class="judgment-card label">
+                <span>Ground truth</span>
+                <strong id="goldLabel"></strong>
+                <p id="goldNote"></p>
+              </div>
+              <div class="judgment-card baseline">
+                <span>Prompt baseline</span>
+                <strong id="baselineVerdict"></strong>
+                <p id="baselineNote"></p>
+              </div>
+              <div class="judgment-card ceft">
+                <span>CEFT short-CoT</span>
+                <strong id="ceftVerdict"></strong>
+                <p id="ceftNote"></p>
+              </div>
+            </div>
+
+            <div class="analysis-grid">
+              <div>
+                <span>Evidence from actual CEFT output</span>
+                <p id="analysisEvidence"></p>
+              </div>
+              <div>
+                <span>Risk source</span>
+                <p id="analysisSource"></p>
+              </div>
+              <div>
+                <span>Failure mode</span>
+                <p id="analysisFailure"></p>
+              </div>
+              <div>
+                <span>Real-world harm</span>
+                <p id="analysisHarm"></p>
+              </div>
+            </div>
+
+            <div class="reason-row">
+              <div>
+                <h4>Baseline behavior</h4>
+                <p id="baselineWhy"></p>
+              </div>
+              <div>
+                <h4>CEFT behavior</h4>
+                <p id="ceftWhy"></p>
+              </div>
+            </div>
+
+            <div class="boundary-box">
+              <h4>Counterfactual boundary</h4>
+              <p id="caseBoundary"></p>
+            </div>
+
+            <div class="raw-output-box">
+              <h4>Actual CEFT generated output</h4>
+              <pre id="rawOutput"></pre>
+            </div>
+          </section>
+          </article>
+        </dialog>
+      </section>
+
+      <section id="diagnosis" class="section">
+        <div class="section-heading">
+          <p class="eyebrow">Diagnosis</p>
+          <h2>3D Model Analysis Distribution</h2>
+          <p>
+            The trained judge emits structured diagnoses over Risk Source,
+            Failure Mode, and Harm. This distribution helps explain what types
+            of safety evidence the model tends to identify.
+          </p>
+        </div>
+        <figure class="framework-image-card diagnosis-card">
+          <img src="./assets/diagnosis-distribution.jpg" alt="Risk source, failure mode, and harm distribution" />
+          <figcaption>
+            Distribution of CEFT's three-dimensional safety diagnosis categories.
+          </figcaption>
+        </figure>
+      </section>
+
+      <section id="artifacts" class="section">
+        <div class="section-heading">
+          <p class="eyebrow">Artifacts</p>
+          <h2>Reproducible Outputs</h2>
+        </div>
+        <div class="artifact-grid">
+          <div><strong>Checkpoint</strong><code>outputs/ceft_sft/ceft_shortcot_full_3072_e1/final</code></div>
+          <div><strong>Training data</strong><code>data/ceft_shortcot_full.jsonl</code></div>
+          <div><strong>Prompt</strong><code>prompts/ceft_shortcot_v1.txt</code></div>
+          <div><strong>Evaluation</strong><code>outputs/*/ceft_shortcot_full_3072_e1_eval/</code></div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <span>CEFT AgentDoG-Lite Demo</span>
+      <span>Evidence-centered trajectory safety diagnosis</span>
+    </footer>
+
+    <script src="./app.js"></script>
+  </body>
+</html>
